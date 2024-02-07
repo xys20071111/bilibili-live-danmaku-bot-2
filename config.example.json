@@ -1,0 +1,16 @@
+{
+  "api": {
+    "port": 0
+  },
+  "verify": {
+    "sessdata": "",
+    "csrf": "",
+    "buvid3": "",
+    "uid": 0
+  },
+  "rooms": [
+    {
+      "room_id": 0
+    }
+  ]
+}

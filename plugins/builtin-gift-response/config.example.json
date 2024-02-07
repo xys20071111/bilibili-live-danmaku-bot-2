@@ -1,0 +1,13 @@
+{
+    "cold_down_time": 20,
+    "free_gift_action": true,
+    "disable_gift_action": false,
+    "disable_super_chat_action": false,
+    "disable_graud_action": false,
+    "danmaku_template": {
+        "gift": "感谢您的{count}个{gift}",
+        "gift_total": "感谢您的一共{count}个{gift}",
+        "guard": "感谢您开通了${count}个月${type}",
+        "sc": "感谢您的醒目留言"
+    }
+}
