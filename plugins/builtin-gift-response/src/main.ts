@@ -48,7 +48,7 @@ async function main() {
         const msg: IMsg = JSON.parse(event.data)
         const room_config: IConfig = config.room_config[`${msg.room}`] || config
         if (msg.cmd === 'SEND_GIFT') {
-            if (!config.disable_gift_action) {
+            if (!room_config.disable_gift_action) {
                 if (thanksColdDownSet.has(msg.data.uname)) {
                     return
                 }
