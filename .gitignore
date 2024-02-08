@@ -1,2 +1,5 @@
+!.gitkeep
 config.json
 main
+plugins/*
+!plugins/builtin-gift-response
