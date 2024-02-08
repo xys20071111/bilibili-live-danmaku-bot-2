@@ -18,6 +18,7 @@ export interface ConfigStruct {
   verify: Credential
   rooms: Array<RoomConfig>
   api: APIConfig
+  connection_refresh_delay_ms: number
 }
 
 const decoder = new TextDecoder('utf-8')

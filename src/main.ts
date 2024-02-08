@@ -3,6 +3,7 @@ import { DanmakuReceiver } from './danmaku_receiver.ts'
 import { APIServer } from './api_server.ts'
 import { sendDanmaku } from './send_danmaku.ts'
 import { launchAllPlugins } from "./plugins.ts"
+import { printLog } from "./utils/print_log.ts"
 
 async function main() {
   const roomReceiverMap: Map<RoomConfig, DanmakuReceiver> = new Map()
@@ -15,7 +16,22 @@ async function main() {
       const event = e as CustomEvent
       apiServer.boardcast(event.detail)
     })
+    receiver.addEventListener('closed', async (e) => {
+      const event = e as CustomEvent
+      if (event.detail === '手动断开') {
+        printLog('主程序', `${room.room_id}自动刷新连接`)
+        await receiver.connect()
+        setTimeout(() => {
+          receiver.close()
+        }, config.connection_refresh_delay_ms)
+      }
+    })
     await receiver.connect()
+    if (config.connection_refresh_delay_ms > 0) {
+      setTimeout(() => {
+        receiver.close()
+      }, config.connection_refresh_delay_ms)
+    }
     roomReceiverMap.set(room, receiver)
   }
   apiServer.addEventListener('send', (e) => {
