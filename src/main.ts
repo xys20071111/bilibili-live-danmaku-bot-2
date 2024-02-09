@@ -17,10 +17,10 @@ async function main() {
       apiServer.boardcast(event.detail)
     })
     receiver.addEventListener('closed', async (e) => {
+      await receiver.connect()
       const event = e as CustomEvent
       if (event.detail === '手动断开') {
         printLog('主程序', `${room.room_id}自动刷新连接`)
-        await receiver.connect()
         setTimeout(() => {
           receiver.close()
         }, config.connection_refresh_delay_ms)
