@@ -16,20 +16,19 @@ async function main() {
       const event = e as CustomEvent
       apiServer.boardcast(event.detail)
     })
-    receiver.addEventListener('closed', async (e) => {
-      await receiver.connect()
+    receiver.addEventListener('closed', (e) => {
       const event = e as CustomEvent
       if (event.detail === '手动断开') {
         printLog('主程序', `${room.room_id}自动刷新连接`)
-        setTimeout(() => {
-          receiver.close()
-        }, config.connection_refresh_delay_ms)
+      } else {
+        receiver.connect().then()
       }
     })
     await receiver.connect()
     if (config.connection_refresh_delay_ms > 0) {
-      setTimeout(() => {
+      setInterval(() => {
         receiver.close()
+        receiver.connect().then()
       }, config.connection_refresh_delay_ms)
     }
     roomReceiverMap.set(room, receiver)
