@@ -1,4 +1,3 @@
-export { WebSocketServer, type WebSocketClient } from 'websocket'
 import { WebSocketClient, WebSocketServer } from "websocket"
 interface IAPIData {
     cmd: string

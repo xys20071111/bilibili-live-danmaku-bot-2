@@ -24,14 +24,10 @@ export class DanmakuReceiver extends EventTarget {
   private roomId: number
   private ws: WebSocket | null = null
   private credential: Credential
-  private closeListener: () => void
   constructor(roomId: number, credential: Credential) {
     super()
     this.roomId = roomId
     this.credential = credential
-    this.closeListener = () => {
-      this.dispatchEvent(new CustomEvent('closed', { detail: '连接断开' }))
-    }
   }
   public async connect() {
     if (this.ws && (this.ws.readyState !== WebSocket.CLOSING || this.ws.readyState !== WebSocket.CLOSING)) {
@@ -73,7 +69,12 @@ export class DanmakuReceiver extends EventTarget {
           this.ws!.send(this.generatePacket(1, 7, payload))
         }
       }
-      this.ws.addEventListener('close', this.closeListener)
+      this.ws.onclose = () => {
+        this.dispatchEvent(new CustomEvent('closed', { detail: '连接断开' }))
+      }
+      this.ws.onerror = () => {
+        this.dispatchEvent(new CustomEvent('closed', { detail: '出现错误' }))
+      }
     } catch {
       this.dispatchEvent(new CustomEvent('closed', { detail: 'fetch房间信息失败' }))
     }
@@ -165,10 +166,6 @@ export class DanmakuReceiver extends EventTarget {
   }
   close() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.removeEventListener('close', this.closeListener)
-      this.ws.onclose = () => {
-        this.dispatchEvent(new CustomEvent('closed', { detail: '手动断开' }))
-      }
       this.ws.close()
       this.ws = null
     }
