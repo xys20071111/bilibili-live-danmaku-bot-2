@@ -72,9 +72,6 @@ export class DanmakuReceiver extends EventTarget {
       this.ws.onclose = () => {
         this.dispatchEvent(new CustomEvent('closed', { detail: '连接断开' }))
       }
-      this.ws.onerror = () => {
-        this.dispatchEvent(new CustomEvent('closed', { detail: '出现错误' }))
-      }
     } catch {
       this.dispatchEvent(new CustomEvent('closed', { detail: 'fetch房间信息失败' }))
     }
