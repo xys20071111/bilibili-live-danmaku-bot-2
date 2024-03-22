@@ -16,8 +16,9 @@ async function main() {
       const event = e as CustomEvent
       apiServer.boardcast(event.detail)
     })
-    receiver.addEventListener('closed', () => {
-      printLog('主程序', `${room.room_id}连接断开`)
+    receiver.addEventListener('closed', (e) => {
+      const evnet = e as CustomEvent
+      printLog('主程序', `${room.room_id}连接断开 ${evnet.detail}`)
       receiver.connect().then(() => {
         printLog('主程序', `${room.room_id}已重新连接`)
       })
