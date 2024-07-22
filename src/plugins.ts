@@ -1,13 +1,13 @@
-import { config } from "./config.ts";
-import { printError } from "./utils/print_log.ts";
+import { config } from './config.ts'
+import { printError } from './utils/print_log.ts'
 
-const plugins: Map<Deno.Command, Deno.ChildProcess> = new Map();
+const plugins: Map<Deno.Command, Deno.ChildProcess> = new Map()
 
 export async function launchAllPlugins(token: string) {
-  const pluginsList = Deno.readDir("./plugins");
+  const pluginsList = Deno.readDir('./plugins')
   for await (const plugin of pluginsList) {
-    if (plugin.name === ".gitkeep") {
-      continue;
+    if (plugin.name === '.gitkeep') {
+      continue
     }
     try {
       const pluginCommand = new Deno.Command(`./plugins/${plugin.name}/main`, {
@@ -16,16 +16,16 @@ export async function launchAllPlugins(token: string) {
           token,
           config.api.port.toString(),
         ],
-      });
-      const pluginProcess = pluginCommand.spawn();
+      })
+      const pluginProcess = pluginCommand.spawn()
       pluginProcess.output().then(() => {
-        const pluginProcess = pluginCommand.spawn();
-        plugins.delete(pluginCommand);
-        plugins.set(pluginCommand, pluginProcess);
-      });
-      plugins.set(pluginCommand, pluginProcess);
+        const pluginProcess = pluginCommand.spawn()
+        plugins.delete(pluginCommand)
+        plugins.set(pluginCommand, pluginProcess)
+      })
+      plugins.set(pluginCommand, pluginProcess)
     } catch {
-      printError("主程序", `启动插件${plugin.name}失败`);
+      printError('主程序', `启动插件${plugin.name}失败`)
     }
   }
 }
@@ -33,20 +33,20 @@ export async function launchAllPlugins(token: string) {
 function stopAllPlugins() {
   for (const pluginProcess of plugins.values()) {
     try {
-      pluginProcess.kill();
+      pluginProcess.kill()
     } catch {
       //Do nothing here
     }
   }
-  Deno.exit();
+  Deno.exit()
 }
 
-Deno.addSignalListener("SIGTERM", () => {
-  stopAllPlugins();
-  Deno.exit();
-});
+Deno.addSignalListener('SIGTERM', () => {
+  stopAllPlugins()
+  Deno.exit()
+})
 
-Deno.addSignalListener("SIGINT", () => {
-  stopAllPlugins();
-  Deno.exit();
-});
+Deno.addSignalListener('SIGINT', () => {
+  stopAllPlugins()
+  Deno.exit()
+})

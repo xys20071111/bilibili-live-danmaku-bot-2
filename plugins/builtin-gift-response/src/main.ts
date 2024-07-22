@@ -1,4 +1,4 @@
-import { printLog } from "../../../src/utils/print_log.ts"
+import { printLog } from '../../../src/utils/print_log.ts'
 interface IMsg {
     room: number,
     cmd: string,

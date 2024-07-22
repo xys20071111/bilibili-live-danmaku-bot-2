@@ -1,4 +1,4 @@
-import { WebSocketClient, WebSocketServer } from "websocket"
+import { WebSocketClient, WebSocketServer } from 'websocket'
 interface IAPIData {
     cmd: string
     token: string

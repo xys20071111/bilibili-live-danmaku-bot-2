@@ -2,8 +2,8 @@ import { config, type RoomConfig } from './config.ts'
 import { DanmakuReceiver } from './danmaku_receiver.ts'
 import { APIServer } from './api_server.ts'
 import { sendDanmaku } from './send_danmaku.ts'
-import { launchAllPlugins } from "./plugins.ts"
-import { printLog } from "./utils/print_log.ts"
+import { launchAllPlugins } from './plugins.ts'
+import { printLog } from './utils/print_log.ts'
 
 async function main() {
   const roomReceiverMap: Map<RoomConfig, DanmakuReceiver> = new Map()

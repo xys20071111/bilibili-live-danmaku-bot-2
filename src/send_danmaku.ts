@@ -1,4 +1,4 @@
-import { Credential } from "./config.ts"
+import { Credential } from './config.ts'
 
 export interface DanmakuStruct {
   color?: number
@@ -54,15 +54,15 @@ export function sendDanmaku(roomId: number, danmaku: DanmakuStruct, cerdential: 
   for (const k in danmaku) {
     data.append(k, danmaku[k as keyof DanmakuStruct]!.toString())
   }
-  fetch("https://api.live.bilibili.com/msg/send", {
+  fetch('https://api.live.bilibili.com/msg/send', {
     method: 'POST',
     body: data,
     headers: {
       cookie: `buvid3=${cerdential.buvid3}; SESSDATA=${cerdential.sessdata}; bili_jct=${cerdential.csrf}`,
-      "user-agent":
-        "Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
-      host: "api.live.bilibili.com",
-      "Referer": "https://live.bilibili.com",
+      'user-agent':
+        'Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36',
+      host: 'api.live.bilibili.com',
+      'Referer': 'https://live.bilibili.com',
     }
   })
 }
