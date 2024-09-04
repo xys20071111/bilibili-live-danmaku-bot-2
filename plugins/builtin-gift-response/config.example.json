@@ -9,5 +9,6 @@
         "gift_total": "感谢您的一共{count}个{gift}",
         "guard": "感谢您开通了${count}个月${type}",
         "sc": "感谢您的醒目留言"
-    }
+    },
+    "room_config": {}
 }
