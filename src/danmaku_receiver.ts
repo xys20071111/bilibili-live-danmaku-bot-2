@@ -1,6 +1,6 @@
-import * as brotli from 'brotli'
-import { Credential } from './config.ts'
-import { printLog } from './utils/print_log.ts'
+import * as brotli from "brotli"
+import { Credential } from "./config.ts"
+import { printLog } from "./utils/print_log.ts"
 
 enum DANMAKU_PROTOCOL {
   JSON = 0,
@@ -18,51 +18,67 @@ enum DANMAKU_TYPE {
 }
 
 const encoder = new TextEncoder()
-const decoder = new TextDecoder('utf-8')
+const decoder = new TextDecoder("utf-8")
 
 export class DanmakuReceiver extends EventTarget {
   private roomId: number
-  private ws: WebSocket | null = null
+  private ws: WebSocket | null = null;
   private credential: Credential
+  private resetTimer: number = -1;
   constructor(roomId: number, credential: Credential) {
     super()
     this.roomId = roomId
     this.credential = credential
   }
   public async connect() {
-    if (this.ws && (this.ws.readyState !== WebSocket.CLOSING || this.ws.readyState !== WebSocket.CLOSED)) {
+    if (
+      this.ws &&
+      (this.ws.readyState !== WebSocket.CLOSING ||
+        this.ws.readyState !== WebSocket.CLOSED)
+    ) {
       return
     }
     try {
       //获取房间信息
-      const roomConfig = await (await fetch(
-        `https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=${this.roomId}&type=0`,
-        {
-          headers: {
-            Cookie: `buvid3=${this.credential.buvid3};SESSDATA=${this.credential.sessdata};bili_jct=${this.credential.csrf};`,
-            'User-Agent':
-              'Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36',
-            Host: 'api.live.bilibili.com',
-            Origin: 'https://live.bilibili.com',
-            Referer: `https://live.bilibili.com/${this.roomId}?broadcast_type=0`
+      const roomConfig = await (
+        await fetch(
+          `https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=${this.roomId}&type=0`,
+          {
+            headers: {
+              Cookie: `buvid3=${this.credential.buvid3};SESSDATA=${this.credential.sessdata};bili_jct=${this.credential.csrf};`,
+              "User-Agent":
+                "Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
+              Host: "api.live.bilibili.com",
+              Origin: "https://live.bilibili.com",
+              Referer: `https://live.bilibili.com/${this.roomId}?broadcast_type=0`,
+            },
           },
-        },
-      )).json()
+        )
+      ).json()
       // 检查获取到的信息是否正常
       if (!roomConfig.data) {
-        this.dispatchEvent(new CustomEvent('closed', { detail: '房间数据异常' }))
+        this.dispatchEvent(
+          new CustomEvent("closed", { detail: "房间数据异常" }),
+        )
         return
       }
-      this.ws = new WebSocket(`wss://${roomConfig.data.host_list[0].host}:${roomConfig.data.host_list[0].wss_port}/sub`)
+      this.ws = new WebSocket(
+        `wss://${roomConfig.data.host_list[0].host}:${roomConfig.data.host_list[0].wss_port}/sub`,
+      )
       this.ws.onopen = () => {
+        // 如果10秒内没有通过验证
+        this.resetTimer = setInterval(() => {
+          //就关闭连接
+          this.close()
+        }, 10000)
         const payload = JSON.stringify({
           roomid: this.roomId,
           protover: 3,
-          platform: 'web',
+          platform: "web",
           uid: this.credential.uid,
           buvid: this.credential.buvid3,
           key: roomConfig.data.token,
-          type: 2
+          type: 2,
         })
         this.ws!.onmessage = this.packetProcesser.bind(this)
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -70,10 +86,12 @@ export class DanmakuReceiver extends EventTarget {
         }
       }
       this.ws.onclose = () => {
-        this.dispatchEvent(new CustomEvent('closed', { detail: '连接断开' }))
+        this.dispatchEvent(new CustomEvent("closed", { detail: "连接断开" }))
       }
     } catch {
-      this.dispatchEvent(new CustomEvent('closed', { detail: 'fetch房间信息失败' }))
+      this.dispatchEvent(
+        new CustomEvent("closed", { detail: "fetch房间信息失败" }),
+      )
     }
   }
   private generatePacket(
@@ -107,21 +125,25 @@ export class DanmakuReceiver extends EventTarget {
         // 心跳包，不做处理
         break
       case DANMAKU_TYPE.AUTH_REPLY:
-        printLog('弹幕接收器', `房间 ${this.roomId} 通过认证`)
+        clearInterval(this.resetTimer)
+        printLog("弹幕接收器", `房间 ${this.roomId} 通过认证`)
         // 认证通过，每30秒发一次心跳包
         setInterval(() => {
-          const heartbeatPayload = '陈睿你妈死了'
+          const heartbeatPayload = "陈睿你妈死了"
           if (this.ws && this.ws.readyState == WebSocket.OPEN) {
             this.ws.send(this.generatePacket(1, 2, heartbeatPayload))
           }
         }, 30000)
-        this.dispatchEvent(new Event('connected'))
+        this.dispatchEvent(new Event("connected"))
         break
       case DANMAKU_TYPE.DATA:
         this.dataProcesser(packetProtocol, packetPayload)
         break
       default:
-        printLog('弹幕接收器', `房间${this.roomId} 未知的弹幕数据包种类 ${packetType}`)
+        printLog(
+          "弹幕接收器",
+          `房间${this.roomId} 未知的弹幕数据包种类 ${packetType}`,
+        )
     }
   }
   private dataProcesser(packetProtocol: number, packetPayload: Uint8Array) {
@@ -129,13 +151,15 @@ export class DanmakuReceiver extends EventTarget {
       case DANMAKU_PROTOCOL.JSON: {
         // 这些数据大都没用，但还是留着吧
         const jsonData = JSON.parse(decoder.decode(packetPayload))
-        this.dispatchEvent(new CustomEvent('danmakuEvent', {
-          detail: {
-            room: this.roomId,
-            cmd: jsonData.cmd,
-            data: jsonData.data
-          }
-        }))
+        this.dispatchEvent(
+          new CustomEvent("danmakuEvent", {
+            detail: {
+              room: this.roomId,
+              cmd: jsonData.cmd,
+              data: jsonData.data,
+            },
+          }),
+        )
         break
       }
       case DANMAKU_PROTOCOL.BROTLI:
@@ -150,14 +174,16 @@ export class DanmakuReceiver extends EventTarget {
       const length = result.getUint32(offset)
       const packetData = resultRaw.slice(offset + 16, offset + length)
       const data = JSON.parse(decoder.decode(packetData))
-      const cmd = data.cmd.split(':')[0]
-      this.dispatchEvent(new CustomEvent('danmakuEvent', {
-        detail: {
-          room: this.roomId,
-          cmd,
-          data: data.info || data.data
-        }
-      }))
+      const cmd = data.cmd.split(":")[0]
+      this.dispatchEvent(
+        new CustomEvent("danmakuEvent", {
+          detail: {
+            room: this.roomId,
+            cmd,
+            data: data.info || data.data,
+          },
+        }),
+      )
       offset += length
     }
   }
