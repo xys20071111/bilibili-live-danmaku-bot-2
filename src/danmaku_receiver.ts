@@ -31,11 +31,7 @@ export class DanmakuReceiver extends EventTarget {
     this.credential = credential
   }
   public async connect() {
-    if (
-      this.ws &&
-      (this.ws.readyState !== WebSocket.CLOSING ||
-        this.ws.readyState !== WebSocket.CLOSED)
-    ) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       return
     }
     try {
