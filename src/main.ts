@@ -31,6 +31,9 @@ async function main() {
       }, config.connection_refresh_delay_ms)
     }
     roomReceiverMap.set(room, receiver)
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1500)
+    })
   }
   apiServer.addEventListener('send', (e) => {
     const event = e as CustomEvent
