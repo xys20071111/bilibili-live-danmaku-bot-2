@@ -32,7 +32,10 @@ async function getRawKey(credential: Credential): Promise<string | null> {
 
 export async function getKey(credential: Credential): Promise<string | null> {
     const keyPart = await getRawKey(credential)
+<<<<<<< HEAD
     console.log(keyPart)
+=======
+>>>>>>> 65a7a07 (删掉一个console.log)
     if (keyPart) {
         const key = MIXIN_KEY_ENC_TAB.map(index => keyPart[index])
         return key.join('').slice(0, 32)
