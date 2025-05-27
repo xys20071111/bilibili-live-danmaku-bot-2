@@ -1,6 +1,7 @@
 import * as brotli from "brotli"
 import { Credential } from "./config.ts"
 import { printLog } from "./utils/print_log.ts"
+import { sign } from "./utils/wbi_util.ts"
 
 enum DANMAKU_PROTOCOL {
   JSON = 0,
@@ -35,10 +36,14 @@ export class DanmakuReceiver extends EventTarget {
       return
     }
     try {
+      const signedData = await sign(this.credential, {
+        id: this.roomId,
+        type: 0
+      })
       //获取房间信息
       const roomConfig = await (
         await fetch(
-          `https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?id=${this.roomId}&type=0`,
+          `https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?${signedData}`,
           {
             headers: {
               Cookie: `buvid3=${this.credential.buvid3};SESSDATA=${this.credential.sessdata};bili_jct=${this.credential.csrf};`,
@@ -53,6 +58,7 @@ export class DanmakuReceiver extends EventTarget {
       ).json()
       // 检查获取到的信息是否正常
       if (!roomConfig.data) {
+        console.log(roomConfig)
         this.dispatchEvent(
           new CustomEvent("closed", { detail: "房间数据异常" }),
         )

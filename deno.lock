@@ -1,13 +1,15 @@
 {
-  "version": "3",
-  "packages": {
-    "specifiers": {
-      "jsr:@std/fmt": "jsr:@std/fmt@0.225.6"
+  "version": "4",
+  "specifiers": {
+    "jsr:@std/crypto@^1.0.5": "1.0.5",
+    "jsr:@std/fmt@*": "0.225.6"
+  },
+  "jsr": {
+    "@std/crypto@1.0.5": {
+      "integrity": "0dcfbb319fe0bba1bd3af904ceb4f948cde1b92979ec1614528380ed308a3b40"
     },
-    "jsr": {
-      "@std/fmt@0.225.6": {
-        "integrity": "aba6aea27f66813cecfd9484e074a9e9845782ab0685c030e453a8a70b37afc8"
-      }
+    "@std/fmt@0.225.6": {
+      "integrity": "aba6aea27f66813cecfd9484e074a9e9845782ab0685c030e453a8a70b37afc8"
     }
   },
   "remote": {
@@ -47,7 +49,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/fmt"
+      "jsr:@std/crypto@^1.0.5",
+      "jsr:@std/fmt@*"
     ]
   }
 }
