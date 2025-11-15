@@ -1,4 +1,5 @@
 import { Credential } from './config.ts'
+import { getCookieValue } from "./utils/getCookie.ts"
 
 export interface DanmakuStruct {
   color?: number
@@ -14,7 +15,7 @@ export interface DanmakuStruct {
 }
 
 export function sendDanmaku(roomId: number, danmaku: DanmakuStruct, cerdential: Credential) {
-  if (danmaku.msg.length > 19) {
+  if (danmaku.msg.length > 38) {
     sendDanmaku(roomId, {
       msg: danmaku.msg.slice(0, 15),
       reply_mid: danmaku.reply_mid,
@@ -49,7 +50,7 @@ export function sendDanmaku(roomId: number, danmaku: DanmakuStruct, cerdential: 
     danmaku.fontsize = 24
   }
   danmaku.roomid = roomId
-  danmaku.csrf = danmaku.csrf_token = cerdential.csrf
+  danmaku.csrf = danmaku.csrf_token = getCookieValue(cerdential.cookie, "bili_jct")
   const data = new FormData()
   for (const k in danmaku) {
     data.append(k, danmaku[k as keyof DanmakuStruct]!.toString())
@@ -58,7 +59,7 @@ export function sendDanmaku(roomId: number, danmaku: DanmakuStruct, cerdential: 
     method: 'POST',
     body: data,
     headers: {
-      cookie: `buvid3=${cerdential.buvid3}; SESSDATA=${cerdential.sessdata}; bili_jct=${cerdential.csrf}`,
+      cookie: cerdential.cookie,
       'user-agent':
         'Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36',
       host: 'api.live.bilibili.com',

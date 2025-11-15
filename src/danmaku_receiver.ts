@@ -1,7 +1,8 @@
-import * as brotli from "brotli"
-import { Credential } from "./config.ts"
-import { printLog } from "./utils/print_log.ts"
-import { sign } from "./utils/wbi_util.ts"
+import * as brotli from "brotli";
+import { Credential } from "./config.ts";
+import { printLog } from "./utils/print_log.ts";
+import { sign } from "./utils/wbi_util.ts";
+import { getCookieValue } from "./utils/getCookie.ts";
 
 enum DANMAKU_PROTOCOL {
   JSON = 0,
@@ -18,35 +19,35 @@ enum DANMAKU_TYPE {
   AUTH_REPLY = 8,
 }
 
-const encoder = new TextEncoder()
-const decoder = new TextDecoder("utf-8")
+const encoder = new TextEncoder();
+const decoder = new TextDecoder("utf-8");
 
 export class DanmakuReceiver extends EventTarget {
-  private roomId: number
+  private roomId: number;
   private ws: WebSocket | null = null;
-  private credential: Credential
+  private credential: Credential;
   private resetTimer: number = -1;
   constructor(roomId: number, credential: Credential) {
-    super()
-    this.roomId = roomId
-    this.credential = credential
+    super();
+    this.roomId = roomId;
+    this.credential = credential;
   }
   public async connect() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      return
+      return;
     }
     try {
       const signedData = await sign(this.credential, {
         id: this.roomId,
-        type: 0
-      })
+        type: 0,
+      });
       //获取房间信息
       const roomConfig = await (
         await fetch(
           `https://api.live.bilibili.com/xlive/web-room/v1/index/getDanmuInfo?${signedData}`,
           {
             headers: {
-              Cookie: `buvid3=${this.credential.buvid3};SESSDATA=${this.credential.sessdata};bili_jct=${this.credential.csrf};`,
+              Cookie: this.credential.cookie,
               "User-Agent":
                 "Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
               Host: "api.live.bilibili.com",
@@ -55,45 +56,45 @@ export class DanmakuReceiver extends EventTarget {
             },
           },
         )
-      ).json()
+      ).json();
       // 检查获取到的信息是否正常
       if (!roomConfig.data) {
-        console.log(roomConfig)
+        console.log(roomConfig);
         this.dispatchEvent(
           new CustomEvent("closed", { detail: "房间数据异常" }),
-        )
-        return
+        );
+        return;
       }
       this.ws = new WebSocket(
         `wss://${roomConfig.data.host_list[0].host}:${roomConfig.data.host_list[0].wss_port}/sub`,
-      )
+      );
       this.ws.onopen = () => {
         // 如果10秒内没有通过验证
         this.resetTimer = setInterval(() => {
           //就关闭连接
-          this.close()
-        }, 10000)
+          this.close();
+        }, 10000);
         const payload = JSON.stringify({
           roomid: this.roomId,
           protover: 3,
           platform: "web",
           uid: this.credential.uid,
-          buvid: this.credential.buvid3,
+          buvid: getCookieValue(this.credential.cookie, "buvid3"),
           key: roomConfig.data.token,
           type: 2,
-        })
-        this.ws!.onmessage = this.packetProcesser.bind(this)
+        });
+        this.ws!.onmessage = this.packetProcesser.bind(this);
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws!.send(this.generatePacket(1, 7, payload))
+          this.ws!.send(this.generatePacket(1, 7, payload));
         }
-      }
+      };
       this.ws.onclose = () => {
-        this.dispatchEvent(new CustomEvent("closed", { detail: "连接断开" }))
-      }
+        this.dispatchEvent(new CustomEvent("closed", { detail: "连接断开" }));
+      };
     } catch {
       this.dispatchEvent(
         new CustomEvent("closed", { detail: "fetch房间信息失败" }),
-      )
+      );
     }
   }
   private generatePacket(
@@ -101,58 +102,58 @@ export class DanmakuReceiver extends EventTarget {
     type: number,
     payload: string,
   ): ArrayBuffer {
-    const payloadEncoded = encoder.encode(payload)
-    const packetLength = 16 + payloadEncoded.length
-    const packet = new ArrayBuffer(packetLength)
-    const packetArray = new Uint8Array(packet)
-    const packetView = new DataView(packet)
-    packetView.setInt32(0, packetLength) // 总长度
-    packetView.setInt16(4, 16) // 头长度
-    packetView.setUint16(6, protocol) // 协议类型
-    packetView.setUint32(8, type) // 包类型
-    packetView.setUint32(12, 1) // 一个常数
-    packetArray.set(payloadEncoded, 16) //写入负载
-    return packet
+    const payloadEncoded = encoder.encode(payload);
+    const packetLength = 16 + payloadEncoded.length;
+    const packet = new ArrayBuffer(packetLength);
+    const packetArray = new Uint8Array(packet);
+    const packetView = new DataView(packet);
+    packetView.setInt32(0, packetLength); // 总长度
+    packetView.setInt16(4, 16); // 头长度
+    packetView.setUint16(6, protocol); // 协议类型
+    packetView.setUint32(8, type); // 包类型
+    packetView.setUint32(12, 1); // 一个常数
+    packetArray.set(payloadEncoded, 16); //写入负载
+    return packet;
   }
   private async packetProcesser(ev: MessageEvent<Blob>) {
     // 弹幕事件处理
-    const msgPacket = await ev.data.arrayBuffer()
-    const msgArray = new Uint8Array(msgPacket)
-    const msg = new DataView(msgPacket)
-    const packetProtocol = msg.getInt16(6)
-    const packetType = msg.getInt32(8)
-    const packetPayload: Uint8Array = msgArray.slice(16)
+    const msgPacket = await ev.data.arrayBuffer();
+    const msgArray = new Uint8Array(msgPacket);
+    const msg = new DataView(msgPacket);
+    const packetProtocol = msg.getInt16(6);
+    const packetType = msg.getInt32(8);
+    const packetPayload: Uint8Array = msgArray.slice(16);
     switch (packetType) {
       case DANMAKU_TYPE.HEARTBEAT_REPLY:
         // 心跳包，不做处理
-        break
+        break;
       case DANMAKU_TYPE.AUTH_REPLY:
-        clearInterval(this.resetTimer)
-        printLog("弹幕接收器", `房间 ${this.roomId} 通过认证`)
+        clearInterval(this.resetTimer);
+        printLog("弹幕接收器", `房间 ${this.roomId} 通过认证`);
         // 认证通过，每30秒发一次心跳包
         setInterval(() => {
-          const heartbeatPayload = "陈睿你妈死了"
+          const heartbeatPayload = "陈睿你妈死了";
           if (this.ws && this.ws.readyState == WebSocket.OPEN) {
-            this.ws.send(this.generatePacket(1, 2, heartbeatPayload))
+            this.ws.send(this.generatePacket(1, 2, heartbeatPayload));
           }
-        }, 30000)
-        this.dispatchEvent(new Event("connected"))
-        break
+        }, 30000);
+        this.dispatchEvent(new Event("connected"));
+        break;
       case DANMAKU_TYPE.DATA:
-        this.dataProcesser(packetProtocol, packetPayload)
-        break
+        this.dataProcesser(packetProtocol, packetPayload);
+        break;
       default:
         printLog(
           "弹幕接收器",
           `房间${this.roomId} 未知的弹幕数据包种类 ${packetType}`,
-        )
+        );
     }
   }
   private dataProcesser(packetProtocol: number, packetPayload: Uint8Array) {
     switch (packetProtocol) {
       case DANMAKU_PROTOCOL.JSON: {
         // 这些数据大都没用，但还是留着吧
-        const jsonData = JSON.parse(decoder.decode(packetPayload))
+        const jsonData = JSON.parse(decoder.decode(packetPayload));
         this.dispatchEvent(
           new CustomEvent("danmakuEvent", {
             detail: {
@@ -161,22 +162,22 @@ export class DanmakuReceiver extends EventTarget {
               data: jsonData.data,
             },
           }),
-        )
-        break
+        );
+        break;
       }
       case DANMAKU_PROTOCOL.BROTLI:
-        this.payloadProcesser(packetPayload)
+        this.payloadProcesser(packetPayload);
     }
   }
   private payloadProcesser(packetPayload: Uint8Array) {
-    const resultRaw = brotli.decompress(packetPayload)
-    const result = new DataView(resultRaw.buffer)
-    let offset = 0
+    const resultRaw = brotli.decompress(packetPayload);
+    const result = new DataView(resultRaw.buffer);
+    let offset = 0;
     while (offset < resultRaw.length) {
-      const length = result.getUint32(offset)
-      const packetData = resultRaw.slice(offset + 16, offset + length)
-      const data = JSON.parse(decoder.decode(packetData))
-      const cmd = data.cmd.split(":")[0]
+      const length = result.getUint32(offset);
+      const packetData = resultRaw.slice(offset + 16, offset + length);
+      const data = JSON.parse(decoder.decode(packetData));
+      const cmd = data.cmd.split(":")[0];
       this.dispatchEvent(
         new CustomEvent("danmakuEvent", {
           detail: {
@@ -185,14 +186,14 @@ export class DanmakuReceiver extends EventTarget {
             data: data.info || data.data,
           },
         }),
-      )
-      offset += length
+      );
+      offset += length;
     }
   }
   close() {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.close()
-      this.ws = null
+      this.ws.close();
+      this.ws = null;
     }
   }
 }
