@@ -12,7 +12,7 @@ const encoder = new TextEncoder()
 async function getRawKey(credential: Credential): Promise<string | null> {
     const navReq = await fetch('https://api.bilibili.com/x/web-interface/nav', {
         headers: {
-            Cookie: `buvid3=${credential.buvid3};SESSDATA=${credential.sessdata};bili_jct=${credential.csrf};`,
+            Cookie: credential.cookie,
             "User-Agent":
                 "Mozilla/5.0 (X11 Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36",
             Host: "api.live.bilibili.com",
