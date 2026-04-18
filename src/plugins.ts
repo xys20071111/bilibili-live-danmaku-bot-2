@@ -16,7 +16,7 @@ const RESTART_DELAY_MS = 3000;
 function launchPlugin(name: string, token: string): boolean {
   let configPath = `./plugins/${name}/config.json`
   if (config.plugin_config_file && config.plugin_config_file[name]) {
-    configPath = import.meta.resolve(config.plugin_config_file[name])
+    configPath = import.meta.resolve(config.plugin_config_file[name]).replaceAll("file://", "")
   }
   try {
     const pluginProcess = Deno.spawn(`./plugins/${name}/main`, {
