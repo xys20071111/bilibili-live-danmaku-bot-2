@@ -18,7 +18,8 @@ export interface ConfigStruct {
   rooms: Array<RoomConfig>
   api: APIConfig
   connection_refresh_delay_ms: number,
-  disabled_plugins?: Array<string>
+  disabled_plugins?: Array<string>,
+  plugin_config_file?: Record<string, string>
 }
 
 const decoder = new TextDecoder("utf-8")

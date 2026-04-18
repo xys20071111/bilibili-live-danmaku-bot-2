@@ -14,10 +14,14 @@ const RESTART_WINDOW_MS = 60000;
 const RESTART_DELAY_MS = 3000;
 
 function launchPlugin(name: string, token: string): boolean {
+  let configPath = `./plugins/${name}/config.json`
+  if (config.plugin_config_file && config.plugin_config_file[name]) {
+    configPath = import.meta.resolve(config.plugin_config_file[name])
+  }
   try {
     const pluginProcess = Deno.spawn(`./plugins/${name}/main`, {
       args: [
-        `./plugins/${name}/config.json`,
+        configPath,
         token,
         config.api.port.toString(),
       ],
