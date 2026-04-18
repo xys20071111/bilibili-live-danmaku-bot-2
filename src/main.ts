@@ -4,6 +4,7 @@ import { APIServer } from './api_server.ts'
 import { sendDanmaku } from './send_danmaku.ts'
 import { launchAllPlugins } from './plugins.ts'
 import { printLog } from './utils/print_log.ts'
+import { sleep } from './utils/sleep.ts'
 
 async function main() {
   const roomReceiverMap: Map<RoomConfig, DanmakuReceiver> = new Map()
@@ -16,12 +17,12 @@ async function main() {
       const event = e as CustomEvent
       apiServer.boardcast(event.detail)
     })
-    receiver.addEventListener('closed', (e) => {
+    receiver.addEventListener('closed', async (e) => {
       const evnet = e as CustomEvent
       printLog('主程序', `${room.room_id}连接断开 ${evnet.detail}`)
-      receiver.connect().then(() => {
-        printLog('主程序', `${room.room_id}已重新连接`)
-      })
+      await sleep(5000)
+      await receiver.connect()
+      printLog('主程序', `${room.room_id}已重新连接`)
     })
     await receiver.connect()
     if (config.connection_refresh_delay_ms > 0) {
@@ -31,9 +32,7 @@ async function main() {
       }, config.connection_refresh_delay_ms)
     }
     roomReceiverMap.set(room, receiver)
-    await new Promise<void>((resolve) => {
-      setTimeout(() => { resolve() }, 1500)
-    })
+    await sleep(1500)
   }
   apiServer.addEventListener('send', (e) => {
     const event = e as CustomEvent
