@@ -25,9 +25,7 @@ function launchPlugin(name: string, token: string): boolean {
         token,
         config.api.port.toString(),
       ],
-      stdin: "null",
-      stdout: "piped",
-      stderr: "piped",
+      stdin: "null"
     });
 
     pluginProcess.status.then((status) => {
